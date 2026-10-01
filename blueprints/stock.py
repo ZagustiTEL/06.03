@@ -1,17 +1,19 @@
 # blueprints/stock.py
 # -*- coding: utf-8 -*-
 """Приём, отгрузка, списание (A06: транзакции, A10: валидация)."""
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 
 from db import get_db, tx
-from security import login_required, log_action
+from security import roles_required, log_action
 from validators import parse_int, parse_str, ValidationError
 
 bp = Blueprint("stock", __name__)
 
+STOCK_ROLES = ("admin", "storekeeper", "operator")
+
 
 @bp.route("/receipts", methods=["GET", "POST"])
-@login_required
+@roles_required(*STOCK_ROLES)
 def receipts():
     db = get_db()
     if request.method == "POST":
@@ -52,7 +54,7 @@ def receipts():
 
 
 @bp.route("/shipments", methods=["GET", "POST"])
-@login_required
+@roles_required(*STOCK_ROLES)
 def shipments():
     db = get_db()
     if request.method == "POST":
@@ -100,7 +102,7 @@ def shipments():
 
 
 @bp.route("/writeoffs", methods=["GET", "POST"])
-@login_required
+@roles_required(*STOCK_ROLES)
 def writeoffs():
     db = get_db()
     if request.method == "POST":
@@ -146,5 +148,4 @@ def writeoffs():
 
 
 def _uid():
-    from flask import session
     return session.get("user_id")
