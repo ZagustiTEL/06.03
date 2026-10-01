@@ -1,15 +1,14 @@
 # blueprints/admin.py
 # -*- coding: utf-8 -*-
 """Пользователи, бэкапы, аудит."""
+import os
 import sqlite3
 from flask import (
-    Blueprint, render_template, request, redirect, url_for, flash, g, current_app
+    Blueprint, render_template, request, redirect, url_for, flash, current_app
 )
 
 from db import get_db, tx
-from security import (
-    roles_required, log_action, hash_password
-)
+from security import roles_required, log_action, hash_password
 from validators import (
     parse_username, parse_password, parse_str, safe_backup_name, ValidationError
 )
@@ -64,7 +63,11 @@ def user_unblock(uid):
     db = get_db()
     with tx(db):
         db.execute("UPDATE users SET is_blocked=0, failed_attempts=0 WHERE id=?", (uid,))
-        db.execute("DELETE FROM login_attempts WHERE username=(SELECT username FROM users WHERE id=?)", (uid,))
+        db.execute(
+            "DELETE FROM login_attempts "
+            "WHERE username=(SELECT username FROM users WHERE id=?)",
+            (uid,),
+        )
     log_action("user_unblock", f"id={uid}")
     flash("Пользователь разблокирован.", "success")
     return redirect(url_for("admin.users"))
@@ -121,7 +124,6 @@ def backup_restore():
 
     ok, msg = backups_mod.restore_backup(safe_name)
     if ok:
-        # A07: инвалидируем сессию после восстановления
         from flask import session
         session.clear()
         log_action("backup_restore", f"name={safe_name}")
@@ -137,7 +139,10 @@ def backup_restore():
 def audit():
     """A09: просмотр журнала аудита."""
     db = get_db()
-    page = max(1, int(request.args.get("page", 1)))
+    try:
+        page = max(1, int(request.args.get("page", 1)))
+    except (TypeError, ValueError):
+        page = 1
     per_page = 100
     offset = (page - 1) * per_page
     items = db.execute(
@@ -149,6 +154,3 @@ def audit():
     total = db.execute("SELECT COUNT(*) FROM audit_log").fetchone()[0]
     return render_template("audit.html", items=items, page=page,
                            per_page=per_page, total=total)
-
-
-import os  # noqa: E402
