@@ -1,7 +1,6 @@
 # blueprints/auth.py
 # -*- coding: utf-8 -*-
 """Аутентификация."""
-import time
 from flask import (
     Blueprint, request, session, redirect, url_for, render_template, flash
 )
@@ -12,7 +11,7 @@ from security import (
     rate_limit_login, register_failed_login, clear_login_attempts,
     _DUMMY_HASH,
 )
-from validators import parse_username, parse_password, ValidationError
+from validators import parse_password, ValidationError
 from flask import current_app
 
 bp = Blueprint("auth", __name__)
@@ -28,7 +27,7 @@ def login():
         max_attempts = current_app.config["MAX_LOGIN_ATTEMPTS"]
         if rate_limit_login(username, ip) >= max_attempts:
             log_action("login_rate_limited", f"username={username}, ip={ip}")
-            flash("Слишком много попыток входа. Попробуйте позже.", "error")
+            flash("Слишком много попыток входа. Учётная запись заблокирована.", "error")
             return render_template("login.html"), 429
 
         db = get_db()
@@ -54,8 +53,7 @@ def login():
         clear_login_attempts(username, ip)
         db.execute("UPDATE users SET failed_attempts=0 WHERE id=?", (u["id"],))
 
-        # A07: ротация session id — Flask подписывает cookie,
-        # поэтому просто очищаем и заново устанавливаем
+        # A07: ротация session id
         session.clear()
         session["user_id"] = u["id"]
         session.permanent = True
@@ -64,12 +62,13 @@ def login():
 
         if u["must_change_password"]:
             flash("Смените пароль после первого входа.", "error")
+            return redirect(url_for("auth.change_password"))
         return redirect(url_for("index"))
 
     return render_template("login.html")
 
 
-@bp.route("/logout", methods=["POST", "GET"])
+@bp.route("/logout", methods=["POST"])
 def logout():
     log_action("logout", "")
     session.clear()
@@ -78,8 +77,7 @@ def logout():
 
 @bp.route("/change-password", methods=["GET", "POST"])
 def change_password():
-    from security import login_required, current_user
-    # использование login_required обёртки через отдельный вызов
+    from security import current_user
     if "user_id" not in session:
         return redirect(url_for("auth.login"))
     u = current_user()
