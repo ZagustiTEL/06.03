@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 """Работа с SQLite."""
 import sqlite3
-import os
 from flask import g, current_app
 
 
