@@ -24,14 +24,12 @@ class Config:
     LOGIN_LOCKOUT_SECONDS = 900       # блокировка на 15 минут
     MAX_BACKUPS = 30                  # A06: ротация бэкапов
     PASSWORD_MIN_LENGTH = 10
-    PASSWORD_RESET_DEFAULT = None     # A04: не сбрасываем на фиксированный пароль
-    DEFAULT_ADMIN_PASSWORD = os.environ.get("SKLAD_ADMIN_PASSWORD") or "ChangeMe_12345!"
 
     # --- A07: cookie ---
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
-    # Secure включается автоматически, если приложение за HTTPS
-    SESSION_COOKIE_SECURE = os.environ.get("FLASK_HTTPS") == "1"
+    # True по умолчанию. Для локальной разработки без HTTPS задайте FLASK_HTTPS=0
+    SESSION_COOKIE_SECURE = os.environ.get("FLASK_HTTPS") != "0"
     PERMANENT_SESSION_LIFETIME = 3600 * 8   # 8 часов
     SESSION_REFRESH_EACH_REQUEST = True
 
