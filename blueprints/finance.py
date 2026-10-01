@@ -14,6 +14,8 @@ bp = Blueprint("finance", __name__)
 @roles_required("admin", "manager")
 def finance():
     db = get_db()
+    u = g.current_user
+
     if request.method == "POST":
         kind = request.form.get("kind")
         if kind not in ("income", "expense"):
@@ -30,13 +32,35 @@ def finance():
         with tx(db):
             db.execute(
                 "INSERT INTO finance(kind, amount, description, user_id) VALUES (?,?,?,?)",
-                (kind, amount, description, g.current_user["id"]),
+                (kind, amount, description, u["id"]),
             )
         log_action("finance_add", f"kind={kind}, amount={amount}")
         flash("Операция добавлена.", "success")
         return redirect(url_for("finance.finance"))
 
-    income = db.execute("SELECT COALESCE(SUM(amount),0) FROM finance WHERE kind='income'").fetchone()[0]
-    expense = db.execute("SELECT COALESCE(SUM(amount),0) FROM finance WHERE kind='expense'").fetchone()[0]
-    items = db.execute("SELECT * FROM finance ORDER BY created_at DESC LIMIT 200").fetchall()
+    # A01: менеджер видит только свои операции, admin — все
+    if u["role"] == "admin":
+        income = db.execute(
+            "SELECT COALESCE(SUM(amount),0) FROM finance WHERE kind='income'"
+        ).fetchone()[0]
+        expense = db.execute(
+            "SELECT COALESCE(SUM(amount),0) FROM finance WHERE kind='expense'"
+        ).fetchone()[0]
+        items = db.execute(
+            "SELECT * FROM finance ORDER BY created_at DESC LIMIT 200"
+        ).fetchall()
+    else:
+        income = db.execute(
+            "SELECT COALESCE(SUM(amount),0) FROM finance WHERE kind='income' AND user_id=?",
+            (u["id"],),
+        ).fetchone()[0]
+        expense = db.execute(
+            "SELECT COALESCE(SUM(amount),0) FROM finance WHERE kind='expense' AND user_id=?",
+            (u["id"],),
+        ).fetchone()[0]
+        items = db.execute(
+            "SELECT * FROM finance WHERE user_id=? ORDER BY created_at DESC LIMIT 200",
+            (u["id"],),
+        ).fetchall()
+
     return render_template("finance.html", items=items, income=income, expense=expense)
