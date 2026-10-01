@@ -1,14 +1,13 @@
 # blueprints/reports_bp.py
 # -*- coding: utf-8 -*-
 """Отчёты."""
-from flask import Blueprint, render_template, request, g
+from flask import Blueprint, render_template, request, flash
 
 from db import get_db
 from security import roles_required
 from reports import build_report, ALLOWED_KINDS
 from export import send_report
 from validators import parse_optional_date, ValidationError
-from flask import flash
 
 bp = Blueprint("reports", __name__)
 
@@ -74,9 +73,3 @@ def report_export():
     except ValidationError:
         date_from = date_to = None
     return send_report(kind, fmt, date_from, date_to)
-
-
-@bp.route("/reports/export/view")
-@roles_required(*REPORT_ROLES)
-def report_export_view():
-    return report_export()
