@@ -210,6 +210,7 @@ pytest -q
 │       └── style.css
 └── tests/
     └── test_app.py
+    └── test_security.py
 ```
 
 ---
