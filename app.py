@@ -4,7 +4,7 @@
 import os
 import datetime
 
-from flask import Flask, render_template, redirect, url_for, g, session
+from flask import Flask, render_template, redirect, url_for, g, session, request
 
 from config import Config
 from db import init_app as init_db_app, get_db
@@ -45,6 +45,48 @@ def create_app(config_class=Config):
     app.register_blueprint(finance_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(reports_bp)
+
+    # --- A07: CSP-заголовки ---
+    @app.after_request
+    def add_security_headers(response):
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "img-src 'self' data:; "
+            "style-src 'self'; "
+            "script-src 'self'; "
+            "object-src 'none'; "
+            "base-uri 'self'; "
+            "frame-ancestors 'none'"
+        )
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "same-origin"
+        return response
+
+    # --- A07: принудительная смена пароля ---
+    @app.before_request
+    def enforce_password_change():
+        allowed_endpoints = {
+            "auth.login", "auth.change_password", "auth.logout",
+            "static",
+        }
+        if request.endpoint in allowed_endpoints or request.endpoint is None:
+            return None
+        if "user_id" not in session:
+            return None
+        db = get_db()
+        row = db.execute(
+            "SELECT must_change_password, is_blocked FROM users WHERE id=?",
+            (session["user_id"],),
+        ).fetchone()
+        if row is None or row["is_blocked"]:
+            session.clear()
+            flash("Сессия недействительна. Войдите заново.", "error")
+            return redirect(url_for("auth.login"))
+        if row["must_change_password"]:
+            flash("Смените пароль после первого входа.", "error")
+            return redirect(url_for("auth.change_password"))
+        return None
 
     # --- главная ---
     @app.route("/")
