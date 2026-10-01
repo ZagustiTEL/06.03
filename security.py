@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 """Аутентификация, авторизация, CSRF, rate limiting."""
 import time
-import hmac
 from functools import wraps
 
 from flask import (
@@ -106,10 +105,17 @@ def log_action(action, details=""):
 
 
 def rate_limit_login(username, ip):
-    """A07: подсчёт неудачных попыток по (username, ip) за окно времени."""
+    """A07: подсчёт неудачных попыток по (username, ip) за окно времени.
+
+    Если количество попыток в окне достигло MAX_LOGIN_ATTEMPTS —
+    выставляем пользователю is_blocked=1 (настоящая блокировка,
+    а не только sliding window).
+    """
     db = get_db()
     now = int(time.time())
     window = current_app.config["LOGIN_WINDOW_SECONDS"]
+    max_attempts = current_app.config["MAX_LOGIN_ATTEMPTS"]
+
     db.execute(
         "DELETE FROM login_attempts WHERE ts < ?",
         (now - current_app.config["LOGIN_LOCKOUT_SECONDS"],),
@@ -119,7 +125,19 @@ def rate_limit_login(username, ip):
         "WHERE username=? AND ip=? AND ts >= ?",
         (username, ip, now - window),
     ).fetchone()
-    return row["cnt"]
+
+    cnt = row["cnt"]
+    if cnt >= max_attempts:
+        db.execute(
+            "UPDATE users SET is_blocked=1 WHERE username=? AND is_blocked=0",
+            (username,),
+        )
+        db.execute(
+            "INSERT INTO audit_log(user_id, action, details, ip, ua) "
+            "VALUES (NULL, 'user_auto_blocked', ?, ?, NULL)",
+            (f"username={username}", ip),
+        )
+    return cnt
 
 
 def register_failed_login(username, ip):
@@ -133,7 +151,3 @@ def register_failed_login(username, ip):
 def clear_login_attempts(username, ip):
     db = get_db()
     db.execute("DELETE FROM login_attempts WHERE username=? AND ip=?", (username, ip))
-
-
-def constant_time_compare(a, b):
-    return hmac.compare_digest(str(a), str(b))
