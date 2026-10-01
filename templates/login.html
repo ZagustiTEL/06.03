@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <title>Вход — АИС «Склад»</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="login-page">
+<form class="box" method="post" action="{{ url_for('auth.login') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <h1>АИС «Склад»</h1>
+    {% with m=get_flashed_messages(with_categories=true) %}
+        {% for c,t in m %}<div class="flash {{c}}">{{t}}</div>{% endfor %}
+    {% endwith %}
+    <input name="username" placeholder="Логин" required autofocus autocomplete="username">
+    <input name="password" type="password" placeholder="Пароль" required autocomplete="current-password">
+    <button>Войти</button>
+</form>
+</body>
+</html>

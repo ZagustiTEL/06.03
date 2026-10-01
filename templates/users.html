@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Пользователи</h1>
+<div class="card">
+    <h3>Добавить пользователя</h3>
+    <form method="post" action="{{ url_for('admin.user_add') }}" class="row">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input name="username" placeholder="Логин" required minlength="3" maxlength="64">
+        <input name="full_name" placeholder="ФИО" required maxlength="200">
+        <input name="password" type="password" placeholder="Пароль (мин. 10)" required minlength="10">
+        <select name="role">
+            <option value="storekeeper">Кладовщик</option>
+            <option value="operator">Оператор</option>
+            <option value="manager">Менеджер</option>
+            <option value="admin">Администратор</option>
+        </select>
+        <button>Добавить</button>
+    </form>
+    <p class="muted">Пользователь обязан сменить пароль при первом входе.</p>
+</div>
+<div class="card">
+    <table>
+        <tr><th>ID</th><th>Логин</th><th>ФИО</th><th>Роль</th><th>Статус</th><th>Сменить пароль</th><th></th></tr>
+        {% for u in items %}
+            <tr>
+                <td>{{ u.id }}</td>
+                <td>{{ u.username }}</td>
+                <td>{{ u.full_name }}</td>
+                <td>{{ u.role }}</td>
+                <td>{{ 'Заблокирован' if u.is_blocked else 'Активен' }}</td>
+                <td>{{ 'Да' if u.must_change_password else 'Нет' }}</td>
+                <td>
+                    {% if u.is_blocked %}
+                    <form method="post" action="{{ url_for('admin.user_unblock', uid=u.id) }}" class="inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button>Разблокировать</button>
+                    </form>
+                    {% endif %}
+                    <form method="post" action="{{ url_for('admin.user_reset', uid=u.id) }}" class="inline"
+                          onsubmit="return confirm('Сгенерировать новый временный пароль?')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button>Сбросить пароль</button>
+                    </form>
+                </td>
+            </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endblock %}

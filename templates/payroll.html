@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Расчёт заработной платы</h1>
+<div class="card">
+    <form method="post" action="{{ url_for('hr.payroll') }}" class="row">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input name="period" placeholder="Период (YYYY-MM)" value="{{ current_period }}"
+               pattern="\d{4}-(0[1-9]|1[0-2])" required>
+        <button>Рассчитать за период</button>
+    </form>
+    <p class="muted">Расчёт: оклад × (отработано часов / 160). Начисления сохраняются в БД.
+        Повторный расчёт за тот же период не создаёт дублей.</p>
+</div>
+<div class="card">
+    <h3>Начисления</h3>
+    <table>
+        <tr><th>Период</th><th>Сотрудник</th><th>Часов</th><th>Сумма</th><th>Создано</th></tr>
+        {% for r in items %}
+            <tr>
+                <td>{{ r.period }}</td>
+                <td>{{ r.full_name }}</td>
+                <td>{{ r.hours }}</td>
+                <td>{{ "%.2f"|format(r.amount) }} ₽</td>
+                <td>{{ r.created_at }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endblock %}

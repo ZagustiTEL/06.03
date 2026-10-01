@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Персонал</h1>
+<div class="card">
+    <h3>Добавить сотрудника</h3>
+    <form method="post" action="{{ url_for('hr.employee_add') }}" class="row">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input name="full_name" placeholder="ФИО" required maxlength="200">
+        <input name="position" placeholder="Должность" maxlength="100">
+        <input name="salary" type="number" step="0.01" min="0" placeholder="Оклад" value="0">
+        <button>Добавить</button>
+    </form>
+</div>
+<div class="card">
+    <table>
+        <tr>
+            <th>ID</th><th>ФИО</th><th>Должность</th><th>Оклад</th>
+            <th>Принят</th><th>График</th><th></th>
+        </tr>
+        {% for e in items %}
+            <tr>
+                <td>{{ e.id }}</td>
+                <td>{{ e.full_name }}</td>
+                <td>{{ e.position or '—' }}</td>
+                <td>{{ "%.2f"|format(e.salary) }} ₽</td>
+                <td>{{ e.hired_at }}</td>
+                <td><a class="btn" href="{{ url_for('hr.employee_shifts', eid=e.id) }}">Открыть</a></td>
+                <td>
+                    <a class="btn" href="{{ url_for('hr.employee_edit', eid=e.id) }}">Изменить</a>
+                    {% if user.role == 'admin' %}
+                    <form method="post" action="{{ url_for('hr.employee_delete', eid=e.id) }}" class="inline"
+                          onsubmit="return confirm('Удалить сотрудника? Связанные смены и начисления также будут удалены.')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button class="btn-danger">Удалить</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endblock %}

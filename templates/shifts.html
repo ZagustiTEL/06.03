@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>График работы: {{ emp.full_name }}</h1>
+<div class="card">
+    <form method="post" class="row">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input name="work_date" type="date" required>
+        <input name="hours" type="number" step="0.5" min="0.5" max="12" value="8" required>
+        <input name="note" placeholder="Примечание" maxlength="300">
+        <button>Добавить смену</button>
+    </form>
+</div>
+<div class="card">
+    <table>
+        <tr><th>Дата</th><th>Часов</th><th>Примечание</th></tr>
+        {% for s in items %}
+            <tr><td>{{ s.work_date }}</td><td>{{ s.hours }}</td><td>{{ s.note or '—' }}</td></tr>
+        {% endfor %}
+    </table>
+</div>
+<a class="btn" href="{{ url_for('hr.employees') }}">← К списку</a>
+{% endblock %}

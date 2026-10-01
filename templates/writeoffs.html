@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Списание товаров</h1>
+<div class="card">
+    <form method="post" action="{{ url_for('stock.writeoffs') }}" class="row">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <select name="product_id" required>
+            <option value="">— товар —</option>
+            {% for p in products %}
+                <option value="{{p.id}}">{{p.sku}} — {{p.name}} (ост. {{p.quantity}})</option>
+            {% endfor %}
+        </select>
+        <input name="quantity" type="number" min="1" placeholder="Количество" required>
+        <input name="reason" placeholder="Причина (брак, порча и т.п.)" maxlength="300">
+        <button class="btn-danger">Списать</button>
+    </form>
+</div>
+<div class="card">
+    <h3>История списаний</h3>
+    <table>
+        <tr><th>Дата</th><th>Товар</th><th>Кол-во</th><th>Причина</th><th>Пользователь</th></tr>
+        {% for r in items %}
+            <tr>
+                <td>{{ r.created_at }}</td>
+                <td>{{ r.sku }} — {{ r.name }}</td>
+                <td>-{{ r.quantity }}</td>
+                <td>{{ r.reason or '—' }}</td>
+                <td>{{ r.user_name or '—' }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endblock %}

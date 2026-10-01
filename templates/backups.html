@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Резервное копирование</h1>
+<div class="card">
+    <form method="post" action="{{ url_for('admin.backup_create') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button>Создать бэкап сейчас</button>
+    </form>
+    <p class="muted">Бэкапы подписываются HMAC, восстанавливаются только при совпадении подписи.
+        Ежедневный бэкап создаётся автоматически при входе на главную.</p>
+</div>
+<div class="card">
+    <table>
+        <tr><th>Файл</th><th>Размер, КБ</th><th>Дата</th><th>Подпись</th><th></th></tr>
+        {% for b in items %}
+            <tr>
+                <td>{{ b.name }}</td>
+                <td>{{ b.size }}</td>
+                <td>{{ b.mtime }}</td>
+                <td>{{ '✓' if b.signed else '—' }}</td>
+                <td>
+                    <form method="post" action="{{ url_for('admin.backup_restore') }}" class="inline"
+                          onsubmit="return confirm('Восстановить БД из этого бэкапа? Текущие данные будут перезаписаны.')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="name" value="{{ b.name }}">
+                        <button class="btn-danger">Восстановить</button>
+                    </form>
+                </td>
+            </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endblock %}

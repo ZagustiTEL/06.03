@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Редактирование сотрудника</h1>
+<div class="card">
+    <form method="post" class="row">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input name="full_name" placeholder="ФИО" value="{{ emp.full_name }}" required maxlength="200">
+        <input name="position" placeholder="Должность" value="{{ emp.position or '' }}" maxlength="100">
+        <input name="salary" type="number" step="0.01" min="0" placeholder="Оклад" value="{{ emp.salary }}">
+        <button>Сохранить</button>
+    </form>
+</div>
+<div class="card">
+    <h3>Информация</h3>
+    <table>
+        <tr><th>ID</th><td>{{ emp.id }}</td></tr>
+        <tr><th>Принят</th><td>{{ emp.hired_at }}</td></tr>
+    </table>
+</div>
+<a class="btn" href="{{ url_for('hr.employees') }}">← К списку</a>
+{% endblock %}

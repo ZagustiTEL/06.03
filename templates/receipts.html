@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Приём товаров</h1>
+<div class="card">
+    <form method="post" action="{{ url_for('stock.receipts') }}" class="row">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <select name="product_id" required>
+            <option value="">— товар —</option>
+            {% for p in products %}<option value="{{p.id}}">{{p.sku}} — {{p.name}}</option>{% endfor %}
+        </select>
+        <input name="quantity" type="number" min="1" placeholder="Количество" required>
+        <input name="supplier" placeholder="Поставщик" maxlength="200">
+        <input name="comment" placeholder="Комментарий" maxlength="500">
+        <button>Принять</button>
+    </form>
+</div>
+<div class="card">
+    <h3>История приёмок</h3>
+    <table>
+        <tr><th>Дата</th><th>Товар</th><th>Кол-во</th><th>Поставщик</th><th>Пользователь</th></tr>
+        {% for r in items %}
+            <tr>
+                <td>{{ r.created_at }}</td>
+                <td>{{ r.sku }} — {{ r.name }}</td>
+                <td>+{{ r.quantity }}</td>
+                <td>{{ r.supplier or '—' }}</td>
+                <td>{{ r.user_name or '—' }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endblock %}

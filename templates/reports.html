@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Отчёты{% endblock %}
+{% block content %}
+<h2>Отчёты по складу</h2>
+
+<!-- Форма генерации отчёта -->
+<div class="card">
+  <h3>Создать отчёт</h3>
+  <form method="get" action="{{ url_for('reports.report_generate') }}" class="row">
+    <select name="kind" required>
+      <option value="stock">Остатки на складе</option>
+      <option value="profit">Финансовый отчёт (по месяцам)</option>
+      <option value="movements">Движения товаров</option>
+    </select>
+    <input type="date" name="date_from" placeholder="С даты">
+    <input type="date" name="date_to" placeholder="По дату">
+    <button>Сформировать</button>
+  </form>
+  <p class="muted">Для отчёта «Остатки на складе» фильтр по датам не применяется.</p>
+</div>
+
+<div class="grid">
+  <div class="stat">
+    <div class="muted">Всего позиций</div>
+    <div class="num">{{ totals.products }}</div>
+  </div>
+  <div class="stat">
+    <div class="muted">Всего единиц</div>
+    <div class="num">{{ totals.total_qty }}</div>
+  </div>
+  <div class="stat">
+    <div class="muted">Стоимость запасов, ₽</div>
+    <div class="num">{{ '%.2f'|format(totals.stock_value) }}</div>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Экспорт данных</h3>
+  <p class="muted">Выгрузка полного списка товаров с остатками и стоимостью.</p>
+  <div class="row" style="justify-content:flex-start">
+    <a class="btn" href="{{ url_for('reports.report_export', kind='stock', fmt='pdf') }}">📄 Скачать PDF</a>
+    <a class="btn" href="{{ url_for('reports.report_export', kind='stock', fmt='xlsx') }}">📊 Скачать Excel</a>
+    <a class="btn" href="{{ url_for('reports.report_export', kind='profit', fmt='xlsx') }}">💰 Финансы (Excel)</a>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Движения по типам</h3>
+  {% if by_type %}
+    <table>
+      <tr><th>Тип операции</th><th>Количество операций</th><th>Суммарно, ед.</th></tr>
+      {% for row in by_type %}
+      <tr>
+        <td>{{ row.type }}</td>
+        <td>{{ row.cnt }}</td>
+        <td>{{ row.total_qty }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  {% else %}
+    <p class="muted">Нет данных о движениях.</p>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h3>Топ-10 товаров по остатку</h3>
+  {% if top %}
+    <table>
+      <tr><th>SKU</th><th>Наименование</th><th>Остаток</th><th>Стоимость, ₽</th></tr>
+      {% for p in top %}
+      <tr>
+        <td>{{ p.sku }}</td>
+        <td>{{ p.name }}</td>
+        <td>{{ p.quantity }} {{ p.unit }}</td>
+        <td>{{ '%.2f'|format(p.total) }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  {% else %}
+    <p class="muted">Нет товаров.</p>
+  {% endif %}
+</div>
+{% endblock %}

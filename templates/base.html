@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <title>{% block title %}АИС «Склад»{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<header>
+    <div>
+        <strong>АИС «Склад»</strong>
+        &nbsp;|&nbsp;
+        <nav style="display:inline">
+            <a href="{{ url_for('index') }}">Главная</a>
+            <a href="{{ url_for('products.list_products') }}">Товары</a>
+            {% if user %}
+                <a href="{{ url_for('reports.reports') }}">Отчёты</a>
+                {% if user.role in ('admin','storekeeper','operator') %}
+                    <a href="{{ url_for('stock.receipts') }}">Приём</a>
+                    <a href="{{ url_for('stock.shipments') }}">Отправка</a>
+                    <a href="{{ url_for('stock.writeoffs') }}">Списание</a>
+                {% endif %}
+                {% if user.role in ('admin','manager') %}
+                    <a href="{{ url_for('hr.employees') }}">Персонал</a>
+                    <a href="{{ url_for('hr.payroll') }}">Зарплата</a>
+                    <a href="{{ url_for('finance.finance') }}">Финансы</a>
+                {% endif %}
+                {% if user.role == 'admin' %}
+                    <a href="{{ url_for('admin.users') }}">Пользователи</a>
+                    <a href="{{ url_for('admin.backups_view') }}">Бэкапы</a>
+                    <a href="{{ url_for('admin.audit') }}">Журнал</a>
+                {% endif %}
+            {% endif %}
+        </nav>
+    </div>
+    <div>
+        {% if user %}
+            {{ user.full_name }} ({{ user.role }}) |
+            <a href="{{ url_for('auth.change_password') }}">Сменить пароль</a> |
+            <form method="post" action="{{ url_for('auth.logout') }}" class="inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit">Выход</button>
+            </form>
+        {% else %}
+            <a href="{{ url_for('auth.login') }}">Вход</a>
+        {% endif %}
+    </div>
+</header>
+<div class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for cat, msg in messages %}
+            <div class="flash {{ cat }}">{{ msg }}</div>
+        {% endfor %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+</div>
+</body>
+</html>

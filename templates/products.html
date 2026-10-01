@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Товары</h1>
+
+{% if user.role in ('admin', 'storekeeper', 'operator') %}
+<div class="card">
+    <h3>Добавить товар</h3>
+    <form method="post" action="{{ url_for('products.product_add') }}" class="row">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input name="sku" placeholder="Артикул" required maxlength="64">
+        <input name="name" placeholder="Наименование" required maxlength="200">
+        <input name="unit" placeholder="Ед. изм." value="шт" maxlength="16">
+        <input name="price" type="number" step="0.01" min="0" placeholder="Цена" value="0">
+        <input name="quantity" type="number" min="0" placeholder="Начальный остаток" value="0">
+        <input name="min_quantity" type="number" min="0" placeholder="Мин. остаток" value="0">
+        <button>Добавить</button>
+    </form>
+</div>
+{% endif %}
+
+<div class="card">
+    <table>
+        <tr>
+            <th>ID</th><th>Артикул</th><th>Наименование</th><th>Ед.</th><th>Цена</th>
+            <th>Остаток</th><th>Минимум</th>
+            {% if user.role=='admin' %}<th></th>{% endif %}
+        </tr>
+        {% for p in products %}
+            <tr>
+                <td>{{ p.id }}</td>
+                <td>{{ p.sku }}</td>
+                <td>{{ p.name }}</td>
+                <td>{{ p.unit }}</td>
+                <td>{{ "%.2f"|format(p.price) }}</td>
+                <td>{{ p.quantity }}</td>
+                <td>{{ p.min_quantity }}</td>
+                {% if user.role=='admin' %}
+                <td>
+                    <form method="post" action="{{ url_for('products.product_delete', pid=p.id) }}" class="inline"
+                          onsubmit="return confirm('Удалить товар?')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button class="btn-danger">Удалить</button>
+                    </form>
+                </td>
+                {% endif %}
+            </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Панель управления</h1>
+<div class="grid">
+    <div class="stat"><div class="muted">Позиций на складе</div><div class="num">{{ stats.products }}</div></div>
+    <div class="stat"><div class="muted">Всего единиц товара</div><div class="num">{{ stats.total_qty }}</div></div>
+    <div class="stat"><div class="muted">Приёмок сегодня</div><div class="num">{{ stats.receipts_today }}</div></div>
+    <div class="stat"><div class="muted">Отгрузок сегодня</div><div class="num">{{ stats.shipments_today }}</div></div>
+    <div class="stat"><div class="muted">Сотрудников</div><div class="num">{{ stats.employees }}</div></div>
+    <div class="stat"><div class="muted">Прибыль за месяц</div><div class="num">{{ "%.2f"|format(stats.profit) }} ₽</div></div>
+</div>
+
+<div class="card" style="margin-top:20px">
+    <h2>Товары с низким остатком</h2>
+    <table>
+        <tr><th>Артикул</th><th>Наименование</th><th>Остаток</th><th>Минимум</th></tr>
+        {% for p in stats.low_stock %}
+            <tr>
+                <td>{{ p.sku }}</td>
+                <td>{{ p.name }}</td>
+                <td style="color:#c0392b"><b>{{ p.quantity }}</b></td>
+                <td>{{ p.min_quantity }}</td>
+            </tr>
+        {% else %}
+            <tr><td colspan="4" class="muted">Все остатки в норме</td></tr>
+        {% endfor %}
+    </table>
+</div>
+{% endblock %}
