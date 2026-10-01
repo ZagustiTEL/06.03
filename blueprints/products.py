@@ -4,7 +4,7 @@
 import sqlite3
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 
-from db import get_db
+from db import get_db, tx
 from security import roles_required, log_action
 from validators import parse_int, parse_float, parse_str, ValidationError
 
@@ -35,10 +35,11 @@ def product_add():
 
     db = get_db()
     try:
-        db.execute(
-            "INSERT INTO products(sku,name,unit,price,quantity,min_quantity) VALUES (?,?,?,?,?,?)",
-            (sku, name, unit, price, qty, minq),
-        )
+        with tx(db):
+            db.execute(
+                "INSERT INTO products(sku,name,unit,price,quantity,min_quantity) VALUES (?,?,?,?,?,?)",
+                (sku, name, unit, price, qty, minq),
+            )
         log_action("product_add", f"sku={sku}")
         flash("Товар добавлен.", "success")
     except sqlite3.IntegrityError:
@@ -49,8 +50,15 @@ def product_add():
 @bp.route("/products/delete/<int:pid>", methods=["POST"])
 @roles_required("admin")
 def product_delete(pid):
+    """A06/A10: корректная обработка FK-конфликта при удалении."""
     db = get_db()
-    db.execute("DELETE FROM products WHERE id=?", (pid,))
-    log_action("product_delete", f"id={pid}")
-    flash("Товар удалён.", "success")
+    try:
+        with tx(db):
+            db.execute("DELETE FROM products WHERE id=?", (pid,))
+        log_action("product_delete", f"id={pid}")
+        flash("Товар удалён.", "success")
+    except sqlite3.IntegrityError:
+        log_action("product_delete_failed", f"id={pid}, FK conflict")
+        flash("Невозможно удалить товар: существуют связанные операции "
+              "(приёмки, отгрузки, списания).", "error")
     return redirect(url_for("products.list_products"))
